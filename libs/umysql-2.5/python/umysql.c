@@ -577,9 +577,10 @@ int API_resultRowValue(void *result, int column, UMTypeInfo *ti, char *value, si
         int hour;
         int minute;
         int second;
+	int microseconds;
 
-        //9999-12-31 23:59:59
-        char temp[20];
+        //9999-12-31 23:59:59.999999
+        char temp[27];
         memcpy (temp, value, cbValue);
         temp[cbValue] = '\0';
 
@@ -595,6 +596,8 @@ int API_resultRowValue(void *result, int column, UMTypeInfo *ti, char *value, si
         value += 3;
         second = parseINT32 (value, value + 2);
         value += 3;
+	microseconds = parseINT32 (value, value + 6);
+        value += 7;
 
         if (year < 1)
         {
@@ -604,7 +607,7 @@ int API_resultRowValue(void *result, int column, UMTypeInfo *ti, char *value, si
         }
 
 
-        valobj = PyDateTime_FromDateAndTime (year, month, day, hour, minute, second, 0);
+        valobj = PyDateTime_FromDateAndTime (year, month, day, hour, minute, second, microseconds);
         break;
       }
 
