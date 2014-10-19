@@ -577,13 +577,9 @@ int API_resultRowValue(void *result, int column, UMTypeInfo *ti, char *value, si
         int hour;
         int minute;
         int second;
-	int microseconds;
+    	int microseconds;
 
         //9999-12-31 23:59:59.999999
-        char temp[27];
-        memcpy (temp, value, cbValue);
-        temp[cbValue] = '\0';
-
         year = parseINT32 (value, value + 4);
         value += 5;
         month = parseINT32 (value, value + 2);
@@ -596,8 +592,7 @@ int API_resultRowValue(void *result, int column, UMTypeInfo *ti, char *value, si
         value += 3;
         second = parseINT32 (value, value + 2);
         value += 3;
-	microseconds = parseINT32 (value, value + 6);
-        value += 7;
+		microseconds = parseINT32 (value, ((char *) value) + cbValue);
 
         if (year < 1)
         {
