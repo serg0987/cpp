@@ -11,3 +11,5 @@
 *.lai
 *.la
 *.a
+/Welcome_1/build/
+/Welcome_1/dist/
