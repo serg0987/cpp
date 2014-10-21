@@ -613,6 +613,7 @@ int API_resultRowValue(void *result, int column, UMTypeInfo *ti, char *value, si
         int hour;
         int minute;
         int second;
+        int microseconds;
 
         //9999-12-31 23:59:59
         char temp[20];
@@ -631,6 +632,9 @@ int API_resultRowValue(void *result, int column, UMTypeInfo *ti, char *value, si
         value += 3;
         second = parseINT32 (value, value + 2);
         value += 3;
+//  тут лажа в случае 9999-12-31 23:59:59 value = 20, cbValue = 19
+        microseconds = parseINT32 (value, cbValue);
+        
 
         if (year < 1)
         {
@@ -640,7 +644,7 @@ int API_resultRowValue(void *result, int column, UMTypeInfo *ti, char *value, si
         }
 
 
-        valobj = PyDateTime_FromDateAndTime (year, month, day, hour, minute, second, 0);
+        valobj = PyDateTime_FromDateAndTime (year, month, day, hour, minute, second, microseconds);
         break;
       }
 
@@ -1022,14 +1026,14 @@ int AppendEscapedArg (Connection *self, char *start, char *end, PyObject *obj)
       else
         if (PyDateTime_Check(obj))
         {
-          int len = sprintf (start, "'%04d-%02d-%02d %02d:%02d:%02d'", 
+          int len = sprintf (start, "'%04d-%02d-%02d %02d:%02d:%02d.%06d'",
             PyDateTime_GET_YEAR(obj),
             PyDateTime_GET_MONTH(obj),
             PyDateTime_GET_DAY(obj),
             PyDateTime_DATE_GET_HOUR(obj),
             PyDateTime_DATE_GET_MINUTE(obj),
-            PyDateTime_DATE_GET_SECOND(obj));
-
+            PyDateTime_DATE_GET_SECOND(obj),
+            PyDateTime_DATE_GET_MICROSECOND(obj));
           return len;
         }
         else
@@ -1484,3 +1488,4 @@ PyMODINIT_FUNC
   PyDict_SetItemString(dict, "Error", umysql_Error);
   PyDict_SetItemString(dict, "SQLError", umysql_SQLError);
 }
+
