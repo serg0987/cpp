@@ -615,11 +615,7 @@ int API_resultRowValue(void *result, int column, UMTypeInfo *ti, char *value, si
         int second;
         int microseconds;
 
-        //9999-12-31 23:59:59
-        char temp[20];
-        memcpy (temp, value, cbValue);
-        temp[cbValue] = '\0';
-
+        //9999-12-31 23:59:59[.999999]
         year = parseINT32 (value, value + 4);
         value += 5;
         month = parseINT32 (value, value + 2);
@@ -631,10 +627,12 @@ int API_resultRowValue(void *result, int column, UMTypeInfo *ti, char *value, si
         minute = parseINT32 (value, value + 2);
         value += 3;
         second = parseINT32 (value, value + 2);
-        value += 3;
-//  тут лажа в случае 9999-12-31 23:59:59 value = 20, cbValue = 19
-        microseconds = parseINT32 (value, cbValue);
-        
+
+        if (cbValue > 20)
+        {
+            value += 3;
+            microseconds = parseINT32 (value, value + 6);
+        }
 
         if (year < 1)
         {
@@ -1026,15 +1024,31 @@ int AppendEscapedArg (Connection *self, char *start, char *end, PyObject *obj)
       else
         if (PyDateTime_Check(obj))
         {
-          int len = sprintf (start, "'%04d-%02d-%02d %02d:%02d:%02d.%06d'",
-            PyDateTime_GET_YEAR(obj),
-            PyDateTime_GET_MONTH(obj),
-            PyDateTime_GET_DAY(obj),
-            PyDateTime_DATE_GET_HOUR(obj),
-            PyDateTime_DATE_GET_MINUTE(obj),
-            PyDateTime_DATE_GET_SECOND(obj),
-            PyDateTime_DATE_GET_MICROSECOND(obj));
-          return len;
+            if(PyDateTime_DATE_GET_MICROSECOND(obj))
+            {
+              int len = sprintf (start, "'%04d-%02d-%02d %02d:%02d:%02d.%06d'",
+                PyDateTime_GET_YEAR(obj),
+                PyDateTime_GET_MONTH(obj),
+                PyDateTime_GET_DAY(obj),
+                PyDateTime_DATE_GET_HOUR(obj),
+                PyDateTime_DATE_GET_MINUTE(obj),
+                PyDateTime_DATE_GET_SECOND(obj),
+                PyDateTime_DATE_GET_MICROSECOND(obj));
+
+              return len;
+            }
+            else
+            {
+              int len = sprintf (start, "'%04d-%02d-%02d %02d:%02d:%02d'",
+                PyDateTime_GET_YEAR(obj),
+                PyDateTime_GET_MONTH(obj),
+                PyDateTime_GET_DAY(obj),
+                PyDateTime_DATE_GET_HOUR(obj),
+                PyDateTime_DATE_GET_MINUTE(obj),
+                PyDateTime_DATE_GET_SECOND(obj));
+
+              return len;
+            }
         }
         else
           if (PyDate_Check(obj))
