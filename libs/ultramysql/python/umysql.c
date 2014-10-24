@@ -628,10 +628,10 @@ int API_resultRowValue(void *result, int column, UMTypeInfo *ti, char *value, si
         value += 3;
         second = parseINT32 (value, value + 2);
 
-        if (cbValue > 20)
+        if (cbValue > 19)
         {
             value += 3;
-            microseconds = parseINT32 (value, value + 6);
+            microseconds = parseINT32 (value, value+(cbValue-19));
         }
 
         if (year < 1)
@@ -1024,16 +1024,18 @@ int AppendEscapedArg (Connection *self, char *start, char *end, PyObject *obj)
       else
         if (PyDateTime_Check(obj))
         {
-            if(PyDateTime_DATE_GET_MICROSECOND(obj))
+            int ms;
+            ms = PyDateTime_DATE_GET_MICROSECOND(obj);
+            if(ms)
             {
-              int len = sprintf (start, "'%04d-%02d-%02d %02d:%02d:%02d.%06d'",
+              int len = sprintf (start, "'%04d-%02d-%02d %02d:%02d:%02d.%d'",
                 PyDateTime_GET_YEAR(obj),
                 PyDateTime_GET_MONTH(obj),
                 PyDateTime_GET_DAY(obj),
                 PyDateTime_DATE_GET_HOUR(obj),
                 PyDateTime_DATE_GET_MINUTE(obj),
                 PyDateTime_DATE_GET_SECOND(obj),
-                PyDateTime_DATE_GET_MICROSECOND(obj));
+                ms);
 
               return len;
             }

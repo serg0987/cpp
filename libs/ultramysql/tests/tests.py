@@ -607,27 +607,32 @@ class TestMySQL(unittest.TestCase):
     def testDateTimeFractional(self):
         # Tests the behaviour of insert/select with mysql/DATETIME <-> python/datetime.datetime
 
-        d_date = datetime.datetime(2010, 02, 11, 13, 37, 41, 467815)
-        d_string = "2010-02-11 13:37:41.467815"
-
         cnn = umysql.Connection()
         cnn.connect (DB_HOST, 3306, DB_USER, DB_PASSWD, DB_DB)
 
+        d_id = 0
+        for fract in [9, 99, 999, 9999, 99999, 999999]:
+            d_id += 1
+            d_date = datetime.datetime(2010, 02, 11, 13, 37, 41, fract)
+            d_string = "2010-02-11 13:37:41.%d" % fract
 
-        cnn.query("drop table if exists tbldate")
-        cnn.query("create table tbldate (test_id int(11) DEFAULT NULL, test_date datetime(6) DEFAULT NULL, test_date2 datetime(6) DEFAULT NULL) ENGINE=MyISAM DEFAULT CHARSET=latin1")
+            cnn.query("drop table if exists tbldate")
+            cnn.query("""create table tbldate (test_id int(11) DEFAULT NULL,
+                                               test_date datetime(%d) DEFAULT NULL,
+                                               test_date2 datetime(%d) DEFAULT NULL)
+                                               ENGINE=MyISAM DEFAULT CHARSET=latin1""" % (len(str(fract)), len(str(fract))))
+            cnn.query("insert into tbldate (test_id, test_date, test_date2) values (%s, '" + d_string + "', %s)", (d_id, d_date))
 
-        cnn.query("insert into tbldate (test_id, test_date, test_date2) values (%s, '" + d_string + "', %s)", (1, d_date))
+            # Make sure our insert was correct
+            rs = cnn.query("select test_id from tbldate where test_date = test_date2")
+            result = rs.rows
+            self.assertEquals([(d_id, )], result)
 
-        # Make sure our insert was correct
-        rs = cnn.query("select test_id from tbldate where test_date = test_date2")
-        result = rs.rows
-        self.assertEquals([(1, )], result)
+            # Make sure select gets the right value back
+            rs = cnn.query("select test_id, test_date, test_date2 from tbldate where test_date = test_date2")
+            result = rs.rows
+            self.assertEquals([(d_id, d_date, d_date)], result)
 
-        # Make sure select gets the right value back
-        rs = cnn.query("select test_id, test_date, test_date2 from tbldate where test_date = test_date2")
-        result = rs.rows
-        self.assertEquals([(1, d_date, d_date)], result)
         cnn.close()
 
     def testZeroDates(self):
